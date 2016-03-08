@@ -12,6 +12,7 @@
 #include "platform_config.h"
 #include "stm32f10x.h"                         // STM32F10x Library Definitions  
 #include "SerialProtocol.h"
+#include "CanProtocol.h"
 #include "stdio.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -27,9 +28,11 @@ const uint8_t serial_number[]="0000";
 /* usart peripheral variables */
 USART_MeaasgeTypedef  USART_Meaasge;
 
-__IO uint8_t UsartRxCmdTopCounter = 0;
-__IO uint8_t UsartRxCmdButtomCounter = 0;
-__IO uint8_t UsartReceivecompleteFlg = 0;		 
+extern __IO uint8_t CanSetSrcAddr;
+
+uint8_t UsartRxCmdTopCounter = 0;
+uint8_t UsartRxCmdButtomCounter = 0;
+uint8_t UsartReceivecompleteFlg = 0;		 
 
 uint8_t UsartRxCmdRingBuffer[USARTRINGBUFFERLEN][100];
 
@@ -113,6 +116,22 @@ void USART_MessageGet( USART_MeaasgeTypedef *pMeaasge, uint8_t data )
 			{
 				
 				//printf("ReceiveDataBuf data is = %s \r\n",pMeaasge->ReceiveDataBuf+1);
+
+				/* Complete CMD parse data reset, enter the idle state */
+				for(i = 0; i < pMeaasge->ReceiveDataNum; i++)
+				{
+					UsartRxCmdRingBuffer[UsartRxCmdTopCounter][i] = pMeaasge->ReceivetmpData[i];
+				}
+				
+				for(i = pMeaasge->ReceiveDataNum; i < 8; i++)
+				{
+					UsartRxCmdRingBuffer[UsartRxCmdTopCounter][i] = pMeaasge->ReceivetmpData[i];
+				}
+				
+				Serial_buffer_clear( pMeaasge );
+				pMeaasge->ReceiveDataLen = 0;
+				pMeaasge->ReceiveDataNum = 0;
+				
 				UsartReceivecompleteFlg = 1;
 					
 				UsartRxCmdTopCounter++;
@@ -120,17 +139,6 @@ void USART_MessageGet( USART_MeaasgeTypedef *pMeaasge, uint8_t data )
 				{
 					UsartRxCmdTopCounter = 0;
 				}
-				
-				/* Complete CMD parse data reset, enter the idle state */
-				for(i = 0; i < pMeaasge->ReceiveDataNum; i++)
-				{
-					UsartRxCmdRingBuffer[UsartRxCmdTopCounter][i] = pMeaasge->ReceivetmpData[i];
-				}
-				
-				Serial_buffer_clear( pMeaasge );
-				
-				pMeaasge->ReceiveDataLen = 0;
-				pMeaasge->ReceiveDataNum = 0;
 				
 				pMeaasge->ReceiveState = USART_RECEIVE_IDLE;
 			}
@@ -172,32 +180,24 @@ void Serial_buffer_clear( USART_MeaasgeTypedef *pMeaasge )
 }
 
 /******************************************************************************
-  Function:Can_cmd_parse
+  Function:Serial_Process
   Description:
   Input:None
   Output:
   Return:
   Others:None
 ******************************************************************************/
-void Serial_cmd_parse( void )
+void Serial_Process( void )
 {
 	if(UsartReceivecompleteFlg == 1)
 	{
 		if(UsartRxCmdTopCounter  !=  UsartRxCmdButtomCounter)
-		{
-			switch(UsartRxCmdRingBuffer[UsartRxCmdButtomCounter][0])
-			{
-				case USART_CMD_COMPILE:
-				{
-					Serial_show_compile_msg();
-				}
-				break;
-				
-				default:
-				break;
-			}	
+		{	
 			
+			Serial_cmd_parse();
+
 			UsartRxCmdButtomCounter++;
+			
 			if(UsartRxCmdButtomCounter == USARTRINGBUFFERLEN)
 			{
 				UsartRxCmdButtomCounter = 0;
@@ -210,13 +210,92 @@ void Serial_cmd_parse( void )
 		}
 	}
 }
+/******************************************************************************
+  Function:Can_cmd_parse
+  Description:
+  Input:None
+  Output:
+  Return:
+  Others:None
+******************************************************************************/
+void Serial_cmd_parse( void )
+{
+	switch(((USART_FrameTypedef *)\
+		      (UsartRxCmdRingBuffer[UsartRxCmdButtomCounter]))->Funcode)
+	{
+		case USART_CMD_COMPILE_MESSAGE:
+		{
+			Serial_show_compile_msg();
+		}
+		break;
+		
+		case USART_CMD_SET_CAN_SCR_ADDR:
+		{
+			Serial_set_srcaddr();
+		}
+		break;	
+		
+		default:
+		{
+			Serial_send_cmd_to_can();
+		}		
+		break;
+	}
+	
+}
 
-/* Private function prototypes -----------------------------------------------*/
-/**
-  * @brief  printf compile message.
-  * @param  None
-  * @retval None
-  */
+/******************************************************************************
+  Function:Serial_SetCanID
+  Description:
+  Input:None
+  Output:
+  Return:
+  Others:None
+******************************************************************************/
+void Serial_SetCanID(CanTxMsg *pMessage, uint8_t CanCmd, 
+	                   uint8_t Idtype, uint8_t CanDstID )
+{
+	
+	CAN_STDEXTIDAddrTypedef CanSrcAddr,CanDstAddr;
+	CAN_EXTSTDIDTypedef CAN_ID;
+	
+	CanSrcAddr.IDAddr = CanSetSrcAddr;
+	CanDstAddr.IDAddr = CanDstID;
+
+	CAN_ID.CanProtocolId.FunCode = CanCmd;
+	CAN_ID.CanProtocolId.SrcAddr = CanSrcAddr.CanIDAddr.StdIDAddr;
+	CAN_ID.CanProtocolId.DstAddr = CanDstAddr.CanIDAddr.StdIDAddr;
+	
+	
+	/* Transmit */
+	if( Idtype == CAN_ID_STD )
+	{
+		CAN_ID.CanProtocolId.ExtDstAddr = 0x00;
+		CAN_ID.CanProtocolId.ExtSrcAddr = 0x00;
+		pMessage->StdId = CAN_ID.Id;
+	}
+	else
+	{
+		CAN_ID.CanProtocolId.ExtDstAddr = CanDstAddr.CanIDAddr.ExtIDAddr;
+		CAN_ID.CanProtocolId.ExtSrcAddr = CanSrcAddr.CanIDAddr.ExtIDAddr;
+		pMessage->ExtId = CAN_ID.Id;
+	}
+	
+	pMessage->RTR = CAN_RTR_DATA;
+	
+	pMessage->IDE = Idtype;
+	
+	pMessage->DLC = 8;
+}
+
+/******************************************************************************
+  Function:Serial_show_compile_msg
+  Description:
+  Input:None
+  Output:
+  Return:
+  Others:None
+******************************************************************************/
 void Serial_show_compile_msg( void )
 {
 	printf("compile_data:%s\r\n",compile_data);
@@ -224,5 +303,51 @@ void Serial_show_compile_msg( void )
 	printf("software_version:%s\r\n",version);
 }
 
+void Serial_set_srcaddr(void)
+{
+	CanSetSrcAddr = UsartRxCmdRingBuffer[UsartRxCmdButtomCounter][1];
+	printf("Set current board address is :%x \r\n",CanSetSrcAddr);
+}
+
+/******************************************************************************
+  Function:Serial_send_cmd_to_can
+  Description:
+  Input:None
+  Output:
+  Return:
+  Others:None
+******************************************************************************/
+void Serial_send_cmd_to_can( void )
+{
+	uint8_t i;
+	CanTxMsg UartToCanTxMessage;
+	
+	Serial_SetCanID(&UartToCanTxMessage,
+	((USART_FrameTypedef *)(UsartRxCmdRingBuffer[UsartRxCmdButtomCounter]))->Funcode,
+	((USART_FrameTypedef *)(UsartRxCmdRingBuffer[UsartRxCmdButtomCounter]))->CanIDType,
+	((USART_FrameTypedef *)(UsartRxCmdRingBuffer[UsartRxCmdButtomCounter]))->CanDstID);
+	
+	for( i=0; i<8; i++ )
+	{
+		UartToCanTxMessage.Data[0] = ((USART_FrameTypedef *)\
+		      (UsartRxCmdRingBuffer[UsartRxCmdButtomCounter]))->Data[0];
+		UartToCanTxMessage.Data[1] = ((USART_FrameTypedef *)\
+		      (UsartRxCmdRingBuffer[UsartRxCmdButtomCounter]))->Data[1];
+		UartToCanTxMessage.Data[2] = ((USART_FrameTypedef *)\
+		      (UsartRxCmdRingBuffer[UsartRxCmdButtomCounter]))->Data[2];
+		UartToCanTxMessage.Data[3] = ((USART_FrameTypedef *)\
+		      (UsartRxCmdRingBuffer[UsartRxCmdButtomCounter]))->Data[3];
+		UartToCanTxMessage.Data[4] = ((USART_FrameTypedef *)\
+		      (UsartRxCmdRingBuffer[UsartRxCmdButtomCounter]))->Data[4];
+		UartToCanTxMessage.Data[5] = ((USART_FrameTypedef *)\
+		      (UsartRxCmdRingBuffer[UsartRxCmdButtomCounter]))->Data[5];
+		UartToCanTxMessage.Data[6] = ((USART_FrameTypedef *)\
+		      (UsartRxCmdRingBuffer[UsartRxCmdButtomCounter]))->Data[6];
+		UartToCanTxMessage.Data[7] = ((USART_FrameTypedef *)\
+		      (UsartRxCmdRingBuffer[UsartRxCmdButtomCounter]))->Data[7];
+	}
+	
+	CAN_Transmit(CAN1, &UartToCanTxMessage);
+}
 
 /***************************** END OF FILE ************************************/

@@ -413,16 +413,6 @@
           <GroupName>APP</GroupName>
           <Files>
             <File>
-              <FileName>LCD_4bit.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\App\LCD_4bit.c</FilePath>
-            </File>
-            <File>
-              <FileName>LCD.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\App\LCD.h</FilePath>
-            </File>
-            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\App\main.c</FilePath>
@@ -476,6 +466,31 @@
               <FileName>SerialProtocol.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\App\SerialProtocol.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Hardware</GroupName>
+          <Files>
+            <File>
+              <FileName>LCD.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\App\LCD.h</FilePath>
+            </File>
+            <File>
+              <FileName>LCD_4bit.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\App\LCD_4bit.c</FilePath>
+            </File>
+            <File>
+              <FileName>ADS1247.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\App\ADS1247.c</FilePath>
+            </File>
+            <File>
+              <FileName>ADS1247.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\App\ADS1247.h</FilePath>
             </File>
           </Files>
         </Group>

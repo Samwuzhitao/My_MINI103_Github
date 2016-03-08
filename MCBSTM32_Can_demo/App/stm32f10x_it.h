@@ -30,6 +30,8 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
+void Delay(__IO uint32_t nTime);
+void TimingDelay_Decrement(void);
 
 void NMI_Handler(void);
 void HardFault_Handler(void);

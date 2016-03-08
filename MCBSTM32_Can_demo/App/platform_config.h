@@ -50,6 +50,17 @@
   #define USART_IRQn              USART1_IRQn
   #define USART_IRQHandler        USART1_IRQHandler
 
+/* SPI Private define --------------------------------------------------------*/
+  #define SPI                     SPI2
+  #define SPI_CLK                 RCC_APB1Periph_SPI2
+  #define SPI_GPIO                GPIOB
+  #define SPI_GPIO_CLK            RCC_APB2Periph_GPIOB
+	#define SPI_PIN_CS              GPIO_Pin_12
+  #define SPI_PIN_SCK             GPIO_Pin_13
+  #define SPI_PIN_MISO            GPIO_Pin_14
+  #define SPI_PIN_MOSI            GPIO_Pin_15
+	
+
 /* LCD Private define -------------------------------------------------------*/
 	/* If processor works on high frequency delay has to be increased, it can be 
 		 increased by factor 2^N by this constant                                   */

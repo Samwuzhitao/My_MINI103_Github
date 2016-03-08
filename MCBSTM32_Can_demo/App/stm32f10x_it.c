@@ -40,6 +40,8 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* can peripheral variables */
+static __IO uint32_t TimingDelay;
+
 CanRxMsg RxMessage;
 extern __IO uint8_t CanRxMsgFlg;
 		
@@ -54,6 +56,31 @@ extern USART_MeaasgeTypedef USART_Meaasge;
 /*            Cortex-M3 Processor Exceptions Handlers                         */
 /******************************************************************************/
 
+
+/**
+  * @brief  Inserts a delay time.
+  * @param  nTime: specifies the delay time length, in milliseconds.
+  * @retval None
+  */
+void Delay(__IO uint32_t nTime)
+{ 
+  TimingDelay = nTime;
+
+  while(TimingDelay != 0);
+}
+
+/**
+  * @brief  Decrements the TimingDelay variable.
+  * @param  None
+  * @retval None
+  */
+void TimingDelay_Decrement(void)
+{
+  if (TimingDelay != 0x00)
+  { 
+    TimingDelay--;
+  }
+}
 /**
   * @brief   This function handles NMI exception.
   * @param  None
@@ -150,6 +177,7 @@ void PendSV_Handler(void)
   */
 void SysTick_Handler(void)
 {
+	TimingDelay_Decrement();
 }
 
 /******************************************************************************/
@@ -169,10 +197,10 @@ void USB_LP_CAN1_RX0_IRQHandler(void)
 		/* Read one RxMessage from the receive data */
 		CAN_Receive(CAN1, CAN_FIFO0, &RxMessage);
 		
-		if (RxMessage.IDE == CAN_ID_TYPE)
-		{
+		//if (RxMessage.IDE == CAN_ID_TYPE)
+		//{
 			CAN_MessageGet(&RxMessage);
-		}
+		//}
 	}
 }
 

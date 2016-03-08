@@ -22,6 +22,7 @@
 void NVIC_Config(void);
 void CAN_Config(void);
 void UART_Config(void);
+void SPI_Config( void );
 void Init_RxMes(CanRxMsg *RxMessage);
 void Show_compile_msg(void);
 

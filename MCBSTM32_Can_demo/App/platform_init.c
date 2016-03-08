@@ -28,13 +28,6 @@ CanTxMsg TxMessage;
 /* usart peripheral variables */
 USART_InitTypeDef USART_InitStructure;
 
-#ifdef USE_CAN_STD_ID
-extern CAN_STDIDTypedef CAN_ID;
-#endif
-
-#ifdef USE_CAN_EXT_ID
-extern CAN_EXTIDTypedef CAN_ID;
-#endif
 
 /**
   * @brief  Configures CAN1 and CAN2.
@@ -43,14 +36,6 @@ extern CAN_EXTIDTypedef CAN_ID;
   */
 void CAN_Config(void)
 {
-	#ifdef USE_CAN_STD_ID
-	CAN_STDIDTypedef MyCAN_ID;
-	#endif
-
-	#ifdef USE_CAN_EXT_ID
-	CAN_EXTIDTypedef MyCAN_ID;
-	#endif
-	
   GPIO_InitTypeDef  GPIO_InitStructure;
 
   /* Configure CAN1 IOs **********************************************/
@@ -126,42 +111,6 @@ void CAN_Config(void)
   CAN_FilterInitStructure.CAN_FilterActivation = ENABLE;
   CAN_FilterInit(&CAN_FilterInitStructure);
   
-	MyCAN_ID.CanProtocolId.DstAddr = DSTADDR;
-	MyCAN_ID.CanProtocolId.SrcAddr = SRCADDR;
-	MyCAN_ID.CanProtocolId.FunCode = 0x03;
-	
-  /* Transmit */
-	if( CAN_ID_TYPE == CAN_ID_STD )
-	{
-		TxMessage.StdId = MyCAN_ID.Id;
-	}
-	else
-	{
-		TxMessage.ExtId = MyCAN_ID.Id;
-	}
-  TxMessage.RTR = CAN_RTR_DATA;
-  TxMessage.IDE = CAN_ID_TYPE;
-  TxMessage.DLC = 8;  
-}
-
-/**
-  * @brief  Initializes a Rx Message.
-  * @param  CanRxMsg *RxMessage.
-  * @retval None
-  */
-void Init_RxMes(CanRxMsg *RxMessage)
-{
-  uint8_t i = 0;
-
-  RxMessage->StdId = 0;
-  RxMessage->ExtId = 0;
-  RxMessage->IDE = CAN_ID_TYPE;
-  RxMessage->DLC = 0;
-  RxMessage->FMI = 0;
-  for (i = 0; i < 8; i++)
-  {
-    RxMessage->Data[i] = 0;
-  }
 }
 
 
@@ -205,6 +154,54 @@ void UART_Config(void)
 	//USART_ITConfig(USART, USART_IT_TXE, ENABLE);
 		
 	USART_Cmd(USART1, ENABLE);
+}
+
+void SPI_Config( void )
+{
+	GPIO_InitTypeDef  GPIO_InitStructure;
+	SPI_InitTypeDef SPI_InitStructure;
+	
+	/* Enable GPIO clock for SPI */
+  RCC_APB2PeriphClockCmd(SPI_GPIO_CLK | RCC_APB2Periph_AFIO, ENABLE);
+  /* Enable SPI Periph clock */
+  RCC_APB1PeriphClockCmd(SPI_CLK, ENABLE); 
+	
+  /* Configure SPI pins: SCK and MOSI ---------------------------------*/
+  /* Configure SCK and MOSI pins as Alternate Function Push Pull */
+  GPIO_InitStructure.GPIO_Pin = SPI_PIN_SCK | SPI_PIN_MOSI ;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+  GPIO_Init(SPI_GPIO, &GPIO_InitStructure);
+
+  /* Configure MISO pin as Alternate Function Push Pull */
+  GPIO_InitStructure.GPIO_Pin = SPI_PIN_MISO;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+  GPIO_Init(SPI_GPIO, &GPIO_InitStructure);
+	
+  GPIO_InitStructure.GPIO_Pin = SPI_PIN_CS;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+  GPIO_Init(SPI_GPIO, &GPIO_InitStructure);
+	
+	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+  SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
+  SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
+  SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
+  SPI_InitStructure.SPI_CPHA = SPI_CPHA_2Edge;
+  SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
+  SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+  SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
+  SPI_InitStructure.SPI_CRCPolynomial = 7;
+  SPI_Init(SPI, &SPI_InitStructure);
+
+  /* Enable SPIy */
+  SPI_Cmd(SPI, ENABLE);
+	
+	  /* Enable the Rx buffer not empty interrupt */
+  SPI_I2S_ITConfig(SPI, SPI_I2S_IT_RXNE, ENABLE);
+
+  /* Enable the Tx buffer empty interrupt */
+  SPI_I2S_ITConfig(SPI, SPI_I2S_IT_TXE, ENABLE);
 }
 
 

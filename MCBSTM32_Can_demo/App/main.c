@@ -10,26 +10,19 @@
  *
  * Copyright (c) 2005-2007 Keil Software. All rights reserved.
  *----------------------------------------------------------------------------*/
+#include "stm32f10x.h"                         // STM32F10x Library Definitions  
+#include "stdio.h"
 #include "platform_config.h"
 #include "platform_init.h"
-#include "stm32f10x.h"                         // STM32F10x Library Definitions  
-#include "LCD.h"                               // LCD function prototypes
-#include "stdio.h"
 #include "SerialProtocol.h"
 #include "CanProtocol.h"
+#include "ADS1247.h"
+#include "LCD.h"                               
 
 /* Private typedef -----------------------------------------------------------*/
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-
-
-extern CanTxMsg TxMessage;
-extern CanRxMsg RxMessage;
-extern __IO uint8_t CanRxMessageCounter;
-extern uint8_t CanRxMsgFlg;
-extern USART_MeaasgeTypedef  USART_Meaasge;
-
 /* Private function prototypes -----------------------------------------------*/
 
 /*----------------------------------------------------------------------------
@@ -44,16 +37,23 @@ void delay(unsigned int nCount)
   MAIN function
  *----------------------------------------------------------------------------*/
 int main (void)  
-{
-	char SentMsgCounter = 0;
-	char MsgBuf[15];
-        
+{     
+	
+	if (SysTick_Config(SystemCoreClock / 1000))
+  { 
+    /* Capture error */ 
+    while (1);
+  }
+	
   /* NVIC configuration */
   NVIC_Config();
 	
 	/* USART configuration */
 	UART_Config();
 	
+	/* SPI configuration */
+	SPI_Config();
+
   /* CAN configuration */
   CAN_Config();
 
@@ -64,29 +64,34 @@ int main (void)
   lcd_init  ();                                   // initialise LCD
   delay(4500000);                                 // Wait for initial display (~5s)
 
+	ADS1247_Init();
+
   lcd_clear ();
   lcd_print ("CAN at 500kbit/s");
 	printf("\r\nCan Demo test:\r\n");
 	
   while(1)
-	{ 
-		Serial_cmd_parse();
+	{ 	
+		int i;
+		float x;
+		
+		Serial_Process();
 		
 		Can_Process();
 		
-//		for(SentMsgCounter = 0; SentMsgCounter <100; SentMsgCounter++ )
+		
+//		for(i=0;i<0x0F;i++)
 //		{
-//			TxMessage.Data[0] = SentMsgCounter;
-//			TxMessage.Data[1] = 0x11;
-//			TxMessage.Data[2] = 0x22;
-//			TxMessage.Data[3] = 0x33;
-//			TxMessage.Data[4] = 0x44;
-//			TxMessage.Data[5] = 0x55;
-//			TxMessage.Data[6] = 0x66;
-//			TxMessage.Data[7] = 0x77;
-//			CAN_Transmit(CAN1, &TxMessage);
-//			delay (450000);
+////			ADS1247_WriteRegister(i,0x02);
+////			Delay(20);
+//			printf("The ADS1247 Read Address %2x Register Value is : %2x \r\n",i,ADS1247_ReadRegister(i));
+//			Delay(20);
 //		}
+		x = ADS1247_ReadData();
+		printf("The ADS1247 Read Value is : %x \r\n",x);
+		printf("The ADS1247 Read Value is : %f \r\n",( float )x*3300*5/0xffffff);
+		Delay(100); 
+		  
 	}
 } 
 

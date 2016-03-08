@@ -465,14 +465,14 @@ ARM Macro Assembler    Page 8
               00000000 
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M3 --apcs=interw
 ork --depend=.\objects\startup_stm32f10x_md.d -o.\objects\startup_stm32f10x_md.
-o -IG:\整理资料\项目资料\schaeffler温度板\前期资料\调试源码\MCBSTM32_Can_demo（
-2016-2-24）\RTE -IG:\整理资料\项目资料\schaeffler温度板\前期资料\调试源码\MCBST
-M32_Can_demo（2016-2-24）\RTE\Device\STM32F103RB -Id:\Keil_v5\ARM\PACK\ARM\CMSI
-S\4.3.0\CMSIS\Include -Id:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\1.1.0\Device\Inc
-lude -Id:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\1.1.0\Device\StdPeriph_Driver\inc
- --predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 515" --pre
-define="_RTE_ SETA 1" --predefine="STM32F10X_MD SETA 1" --list=.\listings\start
-up_stm32f10x_md.lst RTE\Device\STM32F103RB\startup_stm32f10x_md.s
+o -IG:\整理资料\项目资料\schaeffler温度板\前期资料\调试源码\MCBSTM32_ADS1247_de
+mo（2016-3-8）\RTE -IG:\整理资料\项目资料\schaeffler温度板\前期资料\调试源码\MC
+BSTM32_ADS1247_demo（2016-3-8）\RTE\Device\STM32F103RB -Id:\Keil_v5\ARM\PACK\AR
+M\CMSIS\4.3.0\CMSIS\Include -Id:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\1.1.0\Devi
+ce\Include -Id:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\1.1.0\Device\StdPeriph_Driv
+er\inc --predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 515"
+ --predefine="_RTE_ SETA 1" --predefine="STM32F10X_MD SETA 1" --list=.\listings
+\startup_stm32f10x_md.lst RTE\Device\STM32F103RB\startup_stm32f10x_md.s
 
 
 

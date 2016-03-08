@@ -13,21 +13,8 @@
 #include "platform_config.h"
 #include "stm32f10x.h"                         // STM32F10x Library Definitions 
 
-//#define  USE_CAN_STD_ID
-#define  USE_CAN_EXT_ID
-
-
-#ifdef USE_CAN_STD_ID
-	#define CAN_ID_TYPE                         CAN_ID_STD
-	#define DSTADDR                             0x02
-	#define SRCADDR                             0x01
-#endif
-
-#ifdef USE_CAN_EXT_ID
-	#define CAN_ID_TYPE                         CAN_ID_EXT
-	#define DSTADDR                             0x44
-	#define SRCADDR                             0x56
-#endif
+#define USE_CAN_TEST
+//#define USE_CAN_NORMAL
 
 /* Private typedef -----------------------------------------------------------*/
 /* Can receiving character relevant variables */
@@ -35,59 +22,58 @@ typedef union
 {
 	struct
 	{
-		uint32_t FunCode:3;         /*!< bit:  0..2  CMD Code                     */
-		uint32_t SrcAddr:4;         /*!< bit:  3..6  source address               */
-		uint32_t DstAddr:4;         /*!< bit:  7..11 destination address          */
-		uint32_t RESERVED0:21;      /*!< bit: 11..31 Reserved                     */
+		uint8_t StdIDAddr:3;          /*!< bit:  0..2   stdid                  */
+		uint8_t ExtIDAddr:5;          /*!< bit:  3..7   extid                  */
+	}CanIDAddr;
+	uint8_t IDAddr;
+} CAN_STDEXTIDAddrTypedef;
+
+typedef union
+{
+	struct
+	{
+		uint32_t FunCode:5;         /*!< bit:  0..4  CMD Code                  */
+		uint32_t SrcAddr:3;         /*!< bit:  5..7  source address            */
+		uint32_t DstAddr:3;         /*!< bit:  8..10 destination address       */
+		uint32_t ExtSrcAddr:5;
+		uint32_t ExtDstAddr:5;
+		uint32_t RESERVED0:8;       /*!< bit: 25..31 Reserved                  */
 	}CanProtocolId;
 	uint32_t Id;
-} CAN_STDIDTypedef;
+} CAN_EXTSTDIDTypedef;
 
-typedef union
+typedef struct
 {
-	struct
-	{
-		uint32_t FunCode:8;          /*!< bit:  0..7  CMD Code                     */
-		uint32_t SrcAddr:8;          /*!< bit:  9..15  source address              */
-		uint32_t DstAddr:8;          /*!< bit: 16..24 destination address          */		
-		uint32_t RESERVED0:8;        /*!< bit: 25..31 Reserved                     */
-	}CanProtocolId;
-	uint32_t Id;
-} CAN_EXTIDTypedef;
-
-typedef union
-{
-	struct
-	{
-		uint8_t SrcAddr:8;         /*!< bit:  0..3  source address               */
-		uint8_t DstAddr:8;         /*!< bit:  4..7  destination address          */              
-	}CAN_ProtocolAddr;
-	uint8_t CAN_Addr; 
-} CAN_ADDRTypedef;
-
-typedef union
-{
-	struct
-	{
-		uint16_t SrcAddr:8;         /*!< bit:  0..3  source address               */
-		uint16_t DstAddr:8;         /*!< bit:  4..7  destination address          */              
-	}CAN_ProtocolAddr;
-	uint16_t CAN_Addr; 
-} CAN_EXTADDRTypedef;
+	uint8_t SrcAddr;             /*!< source address               */
+	uint8_t DstAddr;             /*!< destination address          */ 
+	uint8_t CanCmd;
+	uint8_t IdType;              /*!< CAN ID type                  */
+	uint8_t data[8];
+} CAN_MessageTypedef;
 
 /* CMD */
 #define CAN_CMD_READ_AD             0     /*     */
-#define CAN_CMD_READ_EEPROM         1     /*     */
-#define CAN_CMD_WRITE_EEPROM        2     /*     */
+#define CAN_CMD_RW_EEPROM           1     /*     */
+#define CAN_CMD_CHECK_BOARD         2     /*     */
 #define CAN_CMD_READ_SN_ID          3     /*     */
-#define CAN_CMD_WRITE_SN_ID         4     /*     */
-#define CAN_CMD_CHECK_TEDS          5     /*     */
-#define CAN_CMD_CHECK_PT1000        6     /*     */
+
 
 /* Private function prototypes -----------------------------------------------*/
 void CAN_MessageGet( CanRxMsg *pMessage );
 void Can_Process( void );
 void Can_cmd_parse( void );
-void Can_show_sn_msg( void );
 
+void Can_change_return_id( CanTxMsg *pMessage, uint8_t cmd );
+	
+void Can_show_sn_msg( void );
+void Can_return_sn_msg( void );
+
+void Can_show_ad_msg( void );
+void Can_return_ad_msg( void );
+
+void Can_show_eeprom_msg( void );
+void Can_return_eeprom_msg( void );
+
+void Can_show_board_msg( void );
+void Can_return_board_msg( void );
 #endif
